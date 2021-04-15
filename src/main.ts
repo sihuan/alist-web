@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import {
   Button, Divider, Tag, Card, Breadcrumb, Table, Modal, Input, Result, Spin, Popover, Space,
-  Switch
+  Switch, Menu
 } from 'ant-design-vue'
 import {
   QrcodeOutlined, HomeOutlined, WindowsFilled,
@@ -21,8 +21,13 @@ import './assets/global.css'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import VuePlyr from 'vue-plyr'
+import 'vue-plyr/dist/vue-plyr.css'
+
 
 const app = createApp(App)
+
+app.use(VuePlyr)
 
 VMdPreview.use(githubTheme)
 app.use(VMdPreview)
@@ -40,6 +45,9 @@ app.use(Spin)
 app.use(Popover)
 app.use(Space)
 app.use(Switch)
+
+app.use(Menu)
+
 app.component('qr-code', QrcodeOutlined)
 app.component('home', HomeOutlined)
 app.component('windows', WindowsFilled)

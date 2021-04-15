@@ -39,12 +39,36 @@
       </div>
     </a-spin>
     <!-- 视频预览 -->
-    <div v-show="previewShow.video">
+    <div v-if="previewShow.video">
       <a-switch checked-children="转码" un-checked-children="原画" v-model:checked="videoTranscoding" />
       <div
         class="video-preview"
         id="video-preview"
+        v-if="!videoTranscoding"
       ></div>
+      <div class="video-preview" v-else>
+        <vue-plyr :options="plyrOptions" ref="plyr-video">
+          <video
+            controls
+            playsinline 
+          >
+            <source v-for="item in plyrOptions.videos"
+              :key="item.name"
+              :size="transQuality(item.name)"
+              :src="item.url"
+              :type="item.type"
+            />
+            <track
+              default
+              kind="captions"
+              label="自动"
+              v-if="plyrOptions.subtitle"
+              :src="plyrOptions.subtitle"
+              srclang="auto"
+            />
+          </video>
+        </vue-plyr>
+      </div>
     </div>
     
     <!-- 音频预览 -->
@@ -65,6 +89,54 @@ import DPlayer, { DPlayerOptions } from 'dplayer'
 import { useRoute } from "vue-router";
 import 'aplayer/dist/APlayer.min.css';
 import APlayer from 'aplayer';
+
+const plyrI18n={
+  restart: '重新开始',
+  rewind: '倒回 {seektime}秒',
+  play: '播放',
+  pause: '暂停',
+  fastForward: '前进 {seektime}秒',
+  seek: '定位',
+  seekLabel: '{currentTime} of {duration}',
+  played: '已播放',
+  buffered: '已缓存',
+  currentTime: '当前时间',
+  duration: '总时间',
+  volume: '音量',
+  mute: '静音',
+  unmute: '取消静音',
+  enableCaptions: '打开字幕',
+  disableCaptions: '关闭字幕',
+  download: '下载',
+  enterFullscreen: '全屏',
+  exitFullscreen: '退出全屏',
+  frameTitle: '正在播放 {title}',
+  captions: '字幕',
+  settings: '设置',
+  pip: '画中画',
+  menuBack: '返回到上一个菜单',
+  speed: '速度',
+  normal: '正常',
+  quality: '质量',
+  loop: '循环',
+  start: '开始',
+  end: '结束',
+  all: '所有',
+  reset: '重置',
+  disabled: '禁用',
+  enabled: '启用',
+  advertisement: '广告',
+  qualityBadge: {
+    2160: '4K',
+    1440: 'FHD',
+    1080: 'FHD',
+    720: 'HD',
+    576: 'SD',
+    540: 'SD',
+    480: 'SD',
+    360: 'LD',
+  },
+}
 
 declare namespace aliyun {
   class Config {
@@ -108,13 +180,21 @@ export default defineComponent({
       spinning: false,
     });
     let dp,ap
+    const plyrOptions = ref<any>({})
     const videoTranscoding = ref<boolean>(true);
     const switchVideoTrans = async () => {
       if(dp){
         dp.destroy()
       }
+      // 获取字幕
+      const filePath = route.path.substring(1)
+      const tmp = filePath.split(".")
+      const subtitlePath = tmp.slice(0, tmp.length-1).join('.')+'.vtt'
+      const subtitleResp = await getPost(subtitlePath, store.state.password)
+      const subtitle = subtitleResp.data
       if(!videoTranscoding.value) {
-        const {data} = await getPost(decodeURI(route.path.substring(1)),store.state.password)
+        previewShow.value.video=true
+        const {data} = await getPost(filePath, store.state.password)
         const ex = file.value.file_extension
         let type = 'auto'
         if(ex==='flv'){
@@ -141,30 +221,32 @@ export default defineComponent({
         videoPreviewPost(store.state.drive, file.value.file_id).then(resp => {
           const res = resp.data
           if (res.meta.code === 200) {
-            const videoOptions: DPlayerOptions={
-            container: document.getElementById('video-preview'),
-            video:{
-              url:'',
-              quality: res.data.template_list.map(item => {
-                return{
+            plyrOptions.value = {
+              title: file.value.name,
+              videos: res.data.template_list.reverse().map(item => {
+                return {
                   name: item.template_id,
                   url: item.url,
-                  type: 'auto'
+                  type: 'video/mp4'
                 }
               }),
-              defaultQuality: res.data.template_list.length-1,
-            },
-            pluginOptions: {
-              flv: {
-                config: {
-                  referrerPolicy: 'no-referrer'
-                }
-              }
-            },
-            autoplay:info.value.autoplay?true:false,
-            // screenshot:true,
-          }
-          dp=new DPlayer(videoOptions)
+              // subtitle: subtitle.data?.url,
+              autoplay: info.value.autoplay?true:false,
+              keyboard: {
+                focused: true,
+                global: true,
+              },
+              tooltips: {
+                controls: true,
+                seek: true,
+              },
+              i18n:plyrI18n,
+            }
+            if(subtitle.meta.code === 200){
+              plyrOptions.value.subtitle = subtitle.data.url
+            }
+            console.log(plyrOptions.value)
+            previewShow.value.video=true
           } else {
             message.error(res.meta.msg)
           }
@@ -210,7 +292,6 @@ export default defineComponent({
       }
       if (file.category==='video') {
         // 预览视频
-        previewShow.value.video=true
         switchVideoTrans()
         return
       }
@@ -265,7 +346,15 @@ export default defineComponent({
         dp.destroy()
       }
     })
-    
+    const transQuality = (quality: string) => {
+      const mapQuality = {
+        'FHD':1080,
+        'HD':720,
+        'SD':540,
+        'LD':360
+      }
+      return mapQuality[quality]
+    }
     return {
       file,
       previewSpinning,
@@ -274,6 +363,8 @@ export default defineComponent({
       copyFileLink,
       text,
       videoTranscoding,
+      plyrOptions,
+      transQuality
     };
   },
 });
