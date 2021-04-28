@@ -1,34 +1,43 @@
 <template>
   <div class="files">
-    <div v-if="isImages&&showImages">
-      <ul id="images">
-        <li v-for="image in images" :key="image.name" class="image">
-          <img :src="getFileDownLink(image)" :alt="image.name">
-        </li>
-      </ul>
+    <div class="files-list" v-contextmenu>
+      <div v-if="isImages&&showImages">
+        <ul id="images">
+          <li v-for="image in images" :key="image.name" class="image">
+            <img :src="getFileDownLink(image)" :alt="image.name">
+          </li>
+        </ul>
+      </div>
+      <a-table v-else
+        :columns="columns"
+        :data-source="files"
+        :pagination="false"
+        rowKey="file_id"
+        :customRow="customRow"
+        :loading="filesLoading"
+        :scroll="{ x: 'max-content' }"
+      >
+        <template #name="{ text,record }">
+          <component :is="record.icon" class="file-icon"/>
+          {{ text }}
+          <span v-if="record.type==='file'" class="action">
+            <copy id="action-1" @click="copyFileLink(record)" />
+            <a target="_blank" :href="getFileDownLink(record)">
+              <download class="action" id="action-2"></download>
+            </a>
+          </span>
+        </template>
+      </a-table>
     </div>
-    <a-table v-else
-      :columns="columns"
-      :data-source="files"
-      :pagination="false"
-      rowKey="file_id"
-      :customRow="customRow"
-      :loading="filesLoading"
-      :scroll="{ x: 'max-content' }"
-    >
-      <template #name="{ text,record }">
-        <component :is="record.icon" class="file-icon"/>
-        {{ text }}
-        <span v-if="record.type==='file'" class="action">
-          <copy id="action-1" @click="copyFileLink(record)" />
-          <a target="_blank" :href="getFileDownLink(record)">
-            <download class="action" id="action-2"></download>
-          </a>
-        </span>
-      </template>
-    </a-table>
+    <br />
+    <context-menu>
+      <context-menu-submenu :label="'查看'">
+        <context-menu-item disabled>图标</context-menu-item>
+        <context-menu-item>列表</context-menu-item>
+        <context-menu-item>详细信息</context-menu-item>
+      </context-menu-submenu>
+    </context-menu>
   </div>
-  <br />
 </template>
 
 <script lang="ts">

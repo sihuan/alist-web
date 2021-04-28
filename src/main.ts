@@ -24,9 +24,12 @@ import store from './store'
 import VuePlyr from 'vue-plyr'
 import 'vue-plyr/dist/vue-plyr.css'
 
+import contextmenu from 'vue3-contextmenu'
+import 'vue3-contextmenu/dist/vue3-contextmenu.css'
 
 const app = createApp(App)
 
+app.use(contextmenu)
 app.use(VuePlyr)
 
 VMdPreview.use(githubTheme)
