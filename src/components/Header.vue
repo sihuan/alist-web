@@ -29,7 +29,7 @@
           <template #icon><retweet /></template>
         </a-button>
       </a-space>
-      <a-space v-if="type === 'file'">
+      <a-space v-if="false">
         <a-button
           type="primary"
           shape="circle"

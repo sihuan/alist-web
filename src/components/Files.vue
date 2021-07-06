@@ -22,10 +22,10 @@
           <component :is="record.icon" class="file-icon"/>
           {{ text }}
           <span v-if="record.type==='file'" class="action">
-            <copy id="action-1" @click="copyFileLink(record)" />
-            <a target="_blank" :href="getFileDownLink(record)">
+            <copy id="action-1" @click="copyTransTexts(record)" />
+            <!-- <a target="_blank" :href="getFileDownLink(record)">
               <download class="action" id="action-2"></download>
-            </a>
+            </a> -->
           </span>
         </template>
       </a-table>
@@ -34,8 +34,8 @@
     <context-menu>
       <context-menu-item @click="multipleChoice" :divider="true">{{isMultiple?"✓":""}}多选</context-menu-item>
       <context-menu-submenu :label="'操作'">
-        <context-menu-item :disabled="!isMultiple" @click="download">下载</context-menu-item>
-        <context-menu-item :disabled="!isMultiple" @click="copyDownloadLink">复制直链</context-menu-item>
+        <!-- <context-menu-item :disabled="!isMultiple" @click="download">下载</context-menu-item> -->
+        <!-- <context-menu-item :disabled="!isMultiple" @click="copyDownloadLink">复制直链</context-menu-item> -->
         <context-menu-item :disabled="!isMultiple" @click="copyTransText">复制秒传</context-menu-item>
         <context-menu-item :disabled="!isMultiple" @click="getTransFile">获取秒传文件</context-menu-item>
       </context-menu-submenu>
@@ -176,6 +176,10 @@ export default defineComponent({
       copyToClip(text)
       message.success("已复制直链.")
     }
+    const copyTransTexts = (item: FileProps) => {
+      copyToClip(`aliyunpan://${item.name}|${item.content_hash}|${item.size}|${item.content_type}`)
+      message.success("已复制秒传文本.")
+    }
     const copyTransText = () => {
       copyToClip(getTransText())
       message.success("已复制秒传文本.")
@@ -203,6 +207,7 @@ export default defineComponent({
       customRow,
       getFileDownLink,
       copyFileLink,
+      copyTransTexts,
       isImages,
       showImages,
       images,
